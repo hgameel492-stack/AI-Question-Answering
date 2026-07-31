@@ -2,85 +2,122 @@ import streamlit as st
 from transformers import pipeline
 import time
 
-# =====================================
+# ==========================================
 # Page Configuration
-# =====================================
+# ==========================================
+
 st.set_page_config(
     page_title="AI Question Answering",
     page_icon="🤖",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="expanded"
 )
 
-# =====================================
+# ==========================================
 # Custom CSS
-# =====================================
-st.markdown(
-    """
+# ==========================================
+
+st.markdown("""
 <style>
 
-body{
-    background:#f8fafc;
-}
-
-.block-container{
-    padding-top:2rem;
-    padding-bottom:2rem;
-}
-
-.hero{
-    background:linear-gradient(135deg,#2563eb,#4f46e5);
-    padding:35px;
-    border-radius:20px;
-    color:white;
-    text-align:center;
-    margin-bottom:30px;
-    box-shadow:0 8px 20px rgba(0,0,0,.15);
-}
-
-.hero h1{
-    margin:0;
-    font-size:42px;
-}
-
-.hero p{
-    font-size:18px;
-    color:#e5e7eb;
-}
-
-.card{
-    background:white;
-    padding:20px;
-    border-radius:15px;
-    box-shadow:0 5px 15px rgba(0,0,0,.08);
-    margin-bottom:20px;
+#MainMenu{
+visibility:hidden;
 }
 
 footer{
-    visibility:hidden;
+visibility:hidden;
+}
+
+header{
+visibility:hidden;
+}
+
+.block-container{
+padding-top:2rem;
+padding-bottom:2rem;
+}
+
+.hero{
+background:linear-gradient(135deg,#2563eb,#4f46e5);
+padding:40px;
+border-radius:20px;
+text-align:center;
+color:white;
+margin-bottom:30px;
+box-shadow:0 8px 20px rgba(0,0,0,.15);
+}
+
+.hero h1{
+font-size:45px;
+margin-bottom:10px;
+}
+
+.hero p{
+font-size:18px;
+color:#f3f4f6;
+}
+
+.metric-card{
+background:white;
+padding:15px;
+border-radius:15px;
+box-shadow:0 4px 12px rgba(0,0,0,.08);
+text-align:center;
+}
+
+.answer-card{
+background:#eff6ff;
+padding:20px;
+border-left:6px solid #2563eb;
+border-radius:15px;
+margin-top:15px;
 }
 
 </style>
-""",
-    unsafe_allow_html=True,
-)
+""", unsafe_allow_html=True)
 
+# ==========================================
+# Load Model
+# ==========================================
 
-# =====================================
-# Load QA Model
-# =====================================
 @st.cache_resource
 def load_model():
-    return pipeline("question-answering", model="deepset/roberta-base-squad2")
 
+    return pipeline(
+        "question-answering",
+        model="deepset/roberta-base-squad2"
+    )
 
-with st.spinner("🔄 Loading AI Model..."):
+with st.spinner("🤖 Loading AI Model..."):
+
     qa_pipeline = load_model()
 
-# =====================================
+if "context" not in st.session_state:
+    st.session_state.context = ""
+
+if "question" not in st.session_state:
+    st.session_state.question = ""
+
+if "answer" not in st.session_state:
+    st.session_state.answer = ""
+
+if "confidence" not in st.session_state:
+    st.session_state.confidence = 0.0
+
+if "response_time" not in st.session_state:
+    st.session_state.response_time = 0.0
+
+# عدد الأسئلة
+if "queries" not in st.session_state:
+    st.session_state.queries = 0
+    
+        # ==========================================
 # Sidebar
-# =====================================
+# ==========================================
+
 with st.sidebar:
+
+    st.image("logo.png", width=120)
 
     st.title("🤖 AI Question Answering")
 
@@ -88,10 +125,12 @@ with st.sidebar:
 
     st.subheader("📖 About")
 
-    st.write("""
-This application answers questions from any paragraph using
-the **RoBERTa SQuAD2** model powered by Hugging Face.
-""")
+    st.write(
+        """
+Ask questions about any paragraph using the
+RoBERTa SQuAD2 model from Hugging Face.
+"""
+    )
 
     st.markdown("---")
 
@@ -109,98 +148,152 @@ the **RoBERTa SQuAD2** model powered by Hugging Face.
 
     st.subheader("🧠 Model")
 
-    st.info("deepset/roberta-base-squad2")
+    st.success("deepset/roberta-base-squad2")
 
     st.markdown("---")
 
     st.subheader("👩‍💻 Developer")
 
-    st.success("Habiba Gamal")
+    st.info("Habiba Gamal")
 
     st.markdown("---")
 
-    st.caption("Version 1.0")
-
-# =====================================
+    st.metric(
+        "Questions Answered",
+        st.session_state.queries
+    )
+    # ==========================================
 # Hero Section
-# =====================================
-st.markdown(
-    """
+# ==========================================
+
+st.markdown("""
 <div class="hero">
 
 <h1>🤖 AI Question Answering</h1>
 
 <p>
-Ask questions about any paragraph using the powerful
-<b>RoBERTa SQuAD2</b> model from Hugging Face.
+Extract answers from any paragraph using
+<b>RoBERTa SQuAD2</b> powered by Hugging Face.
 </p>
 
 </div>
-""",
-    unsafe_allow_html=True,
-)
-# =====================================
+""", unsafe_allow_html=True)
+
+# ==========================================
+# Dashboard
+# ==========================================
+
+d1, d2, d3, d4 = st.columns(4)
+
+with d1:
+    st.metric("🧠 Model", "RoBERTa")
+
+with d2:
+    st.metric("📄 Task", "Question Answering")
+
+with d3:
+    st.metric("⚡ Status", "Online")
+
+with d4:
+    st.metric("📊 Questions", st.session_state.queries)
+
+st.markdown("---")
+
+# ==========================================
 # Main Layout
-# =====================================
+# ==========================================
 
-left, right = st.columns([1.3, 1])
+left, right = st.columns([1.4, 1])
 
-# =====================================
-# Left Column (Input)
-# =====================================
+# ==========================================
+# Left Column
+# ==========================================
 
 with left:
 
     st.subheader("📄 Context")
 
-    context = st.text_area(
-        label="", placeholder="Paste your paragraph here...", height=280
+    st.session_state.context = st.text_area(
+        "",
+        value=st.session_state.context,
+        height=300,
+        placeholder="Paste your paragraph here..."
     )
 
     st.subheader("❓ Question")
 
-    question = st.text_input(label="", placeholder="Ask your question...")
+    st.session_state.question = st.text_input(
+        "",
+        value=st.session_state.question,
+        placeholder="Ask your question..."
+    )
 
-    # Statistics
-    words = len(context.split())
-    characters = len(context)
+    words = len(st.session_state.context.split())
+    chars = len(st.session_state.context)
 
-    col1, col2 = st.columns(2)
+    c1, c2 = st.columns(2)
 
-    with col1:
+    with c1:
         st.metric("📝 Words", words)
 
-    with col2:
-        st.metric("🔠 Characters", characters)
+    with c2:
+        st.metric("🔠 Characters", chars)
 
-    ask_button = st.button("🚀 Get Answer", use_container_width=True, type="primary")
+    ask_button = st.button(
+        "🚀 Get Answer",
+        use_container_width=True,
+        type="primary"
+    )
 
-# =====================================
-# Right Column (Results)
-# =====================================
+# ==========================================
+# Right Column
+# ==========================================
 
 with right:
 
     st.subheader("📊 Results")
 
-    answer_placeholder = st.empty()
+    if st.session_state.answer:
 
-    confidence_placeholder = st.empty()
+        st.success("✅ Prediction Completed")
 
-    response_placeholder = st.empty()
+        st.markdown(f"""
+<div class="answer-card">
 
-# =====================================
+<h3>💡 Answer</h3>
+
+<p style="font-size:20px;">
+{st.session_state.answer}
+</p>
+
+</div>
+""", unsafe_allow_html=True)
+
+        st.markdown("### 📈 Confidence")
+
+        st.progress(st.session_state.confidence / 100)
+
+        st.metric(
+            "Confidence Score",
+            f"{st.session_state.confidence:.2f}%"
+        )
+
+        st.metric(
+            "⚡ Response Time",
+            f"{st.session_state.response_time:.3f} sec"
+        )
+
+        st.code(st.session_state.answer)
+# ==========================================
 # Prediction
-# =====================================
+# ==========================================
 
 if ask_button:
 
-    if context.strip() == "":
-
+    if st.session_state.context.strip() == "":
         st.warning("⚠ Please enter a context.")
 
-    elif question.strip() == "":
-
+    elif st.session_state.question.strip() == "":
         st.warning("⚠ Please enter a question.")
 
     else:
@@ -209,338 +302,58 @@ if ask_button:
 
             start = time.time()
 
-            result = qa_pipeline(question=question, context=context)
-
-            end = time.time()
-
-            answer = result["answer"]
-            confidence = result["score"] * 100
-            response_time = end - start
-
-        with right:
-
-            st.success("✅ Prediction Completed Successfully")
-
-            st.markdown("### 💡 Answer")
-
-            st.info(answer)
-
-            st.markdown("### 📈 Confidence")
-
-            st.progress(confidence / 100)
-
-            st.metric("Confidence Score", f"{confidence:.2f}%")
-
-            st.markdown("### ⚡ Response Time")
-
-            st.metric("Execution Time", f"{response_time:.3f} sec")
-            # =====================================
-# Examples
-# =====================================
-
-st.markdown("---")
-st.subheader("📚 Try an Example")
-
-examples = {
-    "Healthcare": (
-        "Artificial intelligence is transforming healthcare by helping doctors analyze medical images and detect diseases earlier.",
-        "How is AI helping healthcare?",
-    ),
-    "Egypt": (
-        "Egypt is located in North Africa. Cairo is the capital of Egypt. The Nile River is the longest river in Africa.",
-        "What is the capital of Egypt?",
-    ),
-    "Python": (
-        "Python is a high-level programming language created by Guido van Rossum in 1991. It is widely used for web development, data science, and artificial intelligence.",
-        "Who created Python?",
-    ),
-    "Eiffel Tower": (
-        "The Eiffel Tower is located in Paris, France. It was completed in 1889.",
-        "Where is the Eiffel Tower located?",
-    ),
-    "Great Wall": (
-        "The Great Wall of China was constructed to protect ancient Chinese states from invasions.",
-        "Why was the Great Wall built?",
-    ),
-}
-
-selected = st.selectbox("Choose an Example", list(examples.keys()))
-
-col1, col2 = st.columns(2)
-
-with col1:
-
-    if st.button("📄 Show Example", use_container_width=True):
-
-        example_context, example_question = examples[selected]
-
-        st.info("### Context")
-        st.write(example_context)
-
-        st.info("### Question")
-        st.write(example_question)
-
-with col2:
-
-    if st.button("🧹 Clear", use_container_width=True):
-        st.rerun()
-
-# =====================================
-# Download Answer
-# =====================================
-
-if ask_button and context.strip() != "" and question.strip() != "":
-
-    st.markdown("---")
-
-    st.download_button(
-        label="📥 Download Answer",
-        data=f"""
-Question:
-{question}
-
-Answer:
-{answer}
-
-Confidence:
-{confidence:.2f}%
-
-Response Time:
-{response_time:.3f} sec
-""",
-        file_name="answer.txt",
-        mime="text/plain",
-        use_container_width=True,
+    result = qa_pipeline(
+        question=st.session_state.question,
+        context=st.session_state.context
     )
 
-# =====================================
-# Footer
-# =====================================
+    end = time.time()
 
-st.markdown("---")
+    # حفظ النتائج
+    st.session_state.answer = result["answer"]
+    st.session_state.confidence = result["score"] * 100
+    st.session_state.response_time = end - start
 
-st.markdown(
-    """
-<div style='text-align:center;padding:20px;'>
-
-<h4>🤖 AI Question Answering</h4>
-
-<p>
-Powered by
-<b>RoBERTa SQuAD2</b>
-&
-Streamlit
-</p>
-
-<p>
-👩‍💻 Developed with ❤️ by
-<b>Habiba Gamal</b>
-</p>
-
-</div>
-""",
-    unsafe_allow_html=True,
-)
-# =====================================
-# Model Information
-# =====================================
-
-st.markdown("---")
-
-with st.expander("🧠 About the Model"):
-
-    st.markdown("""
-### RoBERTa SQuAD2
-
-This application uses the **deepset/roberta-base-squad2**
-Question Answering model from Hugging Face.
-
-#### Capabilities
-
-- Answer questions from any paragraph
-- Extractive Question Answering
-- Fast inference
-- High accuracy
-- Based on RoBERTa architecture
-
-#### Limitations
-
-- The answer must exist inside the context.
-- Very long contexts may increase inference time.
-- Accuracy depends on context quality.
-""")
-
-# =====================================
-# Tips
-# =====================================
-
-st.markdown("---")
-
-with st.expander("💡 Tips for Better Results"):
-
-    st.info("""
-✔ Use a clear paragraph.
-
-✔ Ask one question at a time.
-
-✔ Make sure the answer exists in the paragraph.
-
-✔ Avoid extremely long contexts.
-""")
-
-# =====================================
-# Project Statistics
-# =====================================
-
-st.markdown("---")
-
-st.subheader("📊 Project Information")
-
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    st.metric("Model", "RoBERTa")
-
-with col2:
-    st.metric("Task", "Question Answering")
-
-with col3:
-    st.metric("Framework", "Streamlit")
-
-# =====================================
-# Contact
-# =====================================
-
-st.markdown("---")
-
-st.subheader("📬 Contact")
-
-st.markdown("""
-- 👩‍💻 **Developer:** Habiba Gamal
-- 💻 **Framework:** Streamlit
-- 🤗 **Model:** Hugging Face Transformers
-""")
-
-# =====================================
-# Footer
-# =====================================
-
-st.markdown(
-    """
----
-<center>
-
-Made with ❤️ using Streamlit & Hugging Face
-
-© 2026 Habiba Gamal
-
-</center>
-""",
-    unsafe_allow_html=True,
-)
-# =====================================
-# Session Statistics
-# =====================================
-
-st.markdown("---")
-st.subheader("📈 Session Statistics")
-
-if "queries" not in st.session_state:
-    st.session_state.queries = 0
-
-if ask_button and context.strip() != "" and question.strip() != "":
+    # زيادة عدد الأسئلة
     st.session_state.queries += 1
 
-col1, col2, col3 = st.columns(3)
+# إعادة تشغيل الصفحة لعرض النتائج
+st.rerun()
 
-with col1:
-    st.metric("Questions Answered", st.session_state.queries)
 
-with col2:
-    st.metric("Model", "RoBERTa")
+# ==========================================
+# Download Report
+# ==========================================
 
-with col3:
-    st.metric("Status", "🟢 Online")
+if st.session_state.answer:
 
-# =====================================
-# AI Features
-# =====================================
+    report = f"""
+AI Question Answering Report
 
-st.markdown("---")
-st.subheader("🚀 Application Features")
+Question:
+{st.session_state.question}
 
-feature1, feature2, feature3 = st.columns(3)
+-------------------------------------
 
-with feature1:
-    st.success("""
-✅ Fast Inference
+Answer:
+{st.session_state.answer}
 
-Answer questions in seconds.
-""")
+-------------------------------------
 
-with feature2:
-    st.info("""
-🧠 AI Powered
+Confidence:
+{st.session_state.confidence:.2f} %
 
-Powered by Hugging Face Transformers.
-""")
+-------------------------------------
 
-with feature3:
-    st.warning("""
-🌍 Easy to Use
+Execution Time:
+{st.session_state.response_time:.3f} sec
+"""
 
-Simply paste your context and ask.
-""")
-
-# =====================================
-# Developer Card
-# =====================================
-
-st.markdown("---")
-
-st.markdown(
-    """
-<div style="background:#2563eb;
-padding:25px;
-border-radius:18px;
-text-align:center;
-color:white;">
-
-<h2>👩‍💻 Habiba Gamal</h2>
-
-<p>AI & Machine Learning Developer</p>
-
-<p>
-Python • Machine Learning • NLP • Streamlit
-</p>
-
-</div>
-""",
-    unsafe_allow_html=True,
-)
-
-# =====================================
-# Feedback
-# =====================================
-
-st.markdown("---")
-
-st.subheader("⭐ Rate this Application")
-
-rating = st.slider("Your Rating", 1, 5, 5)
-
-if st.button("Submit Rating"):
-    st.success("🎉 Thank you for your feedback!")
-
-# =====================================
-# Footer
-# =====================================
-
-st.markdown("---")
-
-st.caption("""
-Made with ❤️ using Streamlit,
-Hugging Face Transformers and PyTorch.
-
-© 2026 Habiba Gamal
-""")
+    st.download_button(
+        "📥 Download Report",
+        report,
+        "QA_Report.txt",
+        "text/plain",
+        use_container_width=True
+    )
+    
